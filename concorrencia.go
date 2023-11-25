@@ -66,11 +66,10 @@ func main() {
 		// Start producers (goroutines)
 		for i := 0; i < rows; i += board_size {
 			for j := 0; j < cols; j += board_size {
-				wg.Add(1)
 				go func(row, col int) {
 					defer wg.Done()
 					changeValue(&matrix, &muMatrix, &resultMatrix, &resultMutexRW,
-						row, col, &wg)
+						row, col)
 				}(i, j)
 			}
 		}
@@ -100,10 +99,9 @@ func main() {
 // Function to change the value of a matrix element
 func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
 	resultMatrix *[][]int, muResult *sync.RWMutex,
-	row, col int, wg *sync.WaitGroup) {
+	row, col int) {
 
 	defer muResult.RUnlock()
-	defer wg.Done()
 
 	muResult.RLock()
 
