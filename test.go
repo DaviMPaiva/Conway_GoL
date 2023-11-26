@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -153,8 +154,9 @@ func RleToBoard(board [][]int, rle string, y int, x int) [][]int {
 }
 
 func main() {
+
 	// Define the size of the game board
-	rows, cols := 40, 60
+	rows, cols := 8000, 16000
 
 	// Create the initial game board with random live cells
 	board := make([][]int, rows)
@@ -162,26 +164,42 @@ func main() {
 		board[i] = make([]int, cols)
 	}
 
-	rle := `x = 47, y = 26, rule = B3/S23
-bo$2bo$3o6$15bo$15b4o$16b4o10b2o$5b2o9bo2bo9bobo$5b2o9b4o8b3o8b2o$15b
-4o8b3o9b2o$15bo12b3o$29bobo$30b2o7$45b2o$44b2o$46bo`
-	RleToBoard(board, rle, 5, 5)
-
-	displayBoard(board)
+	rand.Seed(42)
+	for i := range board {
+		for j := range board[i] {
+			// Randomly make some cell live
+			randomNumber := rand.Intn(2)
+			board[i][j] = randomNumber
+		}
+	}
 
 	// Game loop
-	for {
+	epochs := 10
+	startTime := time.Now()
+	elapsedEpoch := make([]int64, epochs)
+	for i := 0; i < epochs; i++ {
 		// Clear the console (for better visualization in the console)
-		fmt.Print("\033[H\033[2J")
+		//fmt.Print("\033[H\033[2J")
 
 		// Display the current state of the game board
-		displayBoard(board)
+		//displayBoard(board)
 
+		epochstartTime := time.Now()
 		// Update the game board based on the rules
 		board = updateBoard(board)
+		elapsedEpoch[i] = time.Since(epochstartTime).Milliseconds()
 
+		fmt.Println("epoca numero", i)
 		// Pause for a while to make it visually comprehensible
-		time.Sleep(7000 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
+	}
+	elapsed := time.Since(startTime)
+	fmt.Printf("Total Execution time: %s\n", elapsed)
+	result := elapsed / time.Duration(epochs)
+	fmt.Printf("Elapsed time divided by %d: %s\n", epochs, result)
+
+	for i := 0; i < epochs; i++ {
+		fmt.Println(elapsedEpoch[i])
 	}
 
 }
