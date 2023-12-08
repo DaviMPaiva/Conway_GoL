@@ -10,12 +10,12 @@ import (
 const (
 	Dead       = 0
 	Alive      = 1
-	board_size = 160
+	board_size = 6000
 )
 
 func main() {
-	rows := 8000
-	cols := 8000
+	rows := 24000
+	cols := 24000
 
 	matrix := make([][]int, rows)
 	for i := range matrix {
