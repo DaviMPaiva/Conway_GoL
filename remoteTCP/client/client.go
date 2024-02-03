@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
+	"time"
 )
 
 func main() {
@@ -15,18 +17,31 @@ func main() {
 	}
 	defer conn.Close()
 
+	//Começa a marcar o tempo
+	startTime := time.Now()
+
+	dim := 50
+	board_size := 10
+	epochs := 10
 	// Send a message to the server
-	message := "Hello, server!"
+	message := strconv.Itoa(dim) + "," + strconv.Itoa(board_size) + "," + strconv.Itoa(epochs)
+
 	conn.Write([]byte(message))
 
 	// Receive the echoed message from the server
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, dim*dim)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading:", err)
 		return
 	}
+	//Calcul o tempo decorrido
+	elapsedTime := time.Since(startTime)
 
+	result := buffer[:n]
+	for i := 0; i < dim; i++ {
+		fmt.Printf("%s\n", result[i*dim:(i+1)*dim])
+	}
 	// Print the echoed message
-	fmt.Printf("Server response: %s\n", buffer[:n])
+	fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
 }

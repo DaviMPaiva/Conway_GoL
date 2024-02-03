@@ -5,17 +5,26 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+	"os"
+	"strconv"
 )
 
 const (
 	Dead       = 0
 	Alive      = 1
-	board_size = 10
+	
 )
+var board_size int = 0
+
+type Matrix [][]int
 
 func main() {
-	rows := 100
-	cols := 100
+	dim, _ := strconv.Atoi(os.Args[1])
+	board_size, _ = strconv.Atoi(os.Args[2])
+	epochs, _ := strconv.Atoi(os.Args[3])
+
+	rows := dim
+	cols := dim
 
 	matrix := make([][]int, rows)
 	for i := range matrix {
@@ -35,13 +44,21 @@ func main() {
 		resultMatrix[i] = make([]int, cols)
 	}
 
+	matrixPool := &sync.Pool{
+		New: func() interface{} {
+			bufferMatrix := make(Matrix, board_size)
+			for i := range bufferMatrix {
+				bufferMatrix[i] = make([]int, board_size)
+			}
+			return bufferMatrix
+		},
+	}
+
 	var wg sync.WaitGroup
 	var muMatrix sync.Mutex
 	var resultMutexRW sync.RWMutex
 
-	epochs := 10
-	startTime := time.Now()
-	elapsedEpoch := make([]time.Duration, epochs)
+	elapsedEpoch := make([]int64, epochs)
 	for i := 0; i < epochs; i++ {
 
 		epochstartTime := time.Now()
@@ -51,7 +68,7 @@ func main() {
 				wg.Add(1)
 				go func(row, col int) {
 					defer wg.Done()
-					changeValue(&matrix, &muMatrix, &resultMatrix, &resultMutexRW,
+					changeValue(&matrix, &muMatrix, &resultMatrix, &resultMutexRW, matrixPool,
 						row, col)
 				}(i, j)
 			}
@@ -60,28 +77,22 @@ func main() {
 
 		matrix = resultMatrix
 
-		elapsedEpoch[i] = time.Since(epochstartTime)
-		fmt.Printf("Epoch %d\t", i)
+		elapsedEpoch[i] = time.Since(epochstartTime).Microseconds()
 	}
-	elapsed := time.Since(startTime)
-	fmt.Printf("Total Execution time: %s\n", elapsed)
-	result := elapsed / time.Duration(epochs)
-	fmt.Printf("Elapsed time divided by %d: %s\n", epochs, result)
 
+	file, _ := os.OpenFile("outputs/"+os.Args[1]+"_"+os.Args[2]+"_"+os.Args[3]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE,0222)
 	for i := 0; i < epochs; i++ {
-		fmt.Printf("%s\t", elapsedEpoch[i])
+		fmt.Fprintf(file, "%d\n", elapsedEpoch[i])
 	}
 }
 func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
-	resultMatrix *[][]int, muResult *sync.RWMutex,
+	resultMatrix *[][]int, muResult *sync.RWMutex, matrixPool *sync.Pool,
 	row, col int) {
 
 	defer muResult.RUnlock()
 
-	bufferMatrix := make([][]int, board_size)
-	for i := range bufferMatrix {
-		bufferMatrix[i] = make([]int, board_size)
-	}
+	bufferMatrix := matrixPool.Get().(Matrix)
+	defer matrixPool.Put(bufferMatrix)
 
 	muResult.RLock()
 
@@ -113,11 +124,13 @@ func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
 	}
 	muMatrix.Unlock()
 }
+
 func displayMatrix(matrix [][]int) {
 	for _, row := range matrix {
 		fmt.Println(row)
 	}
 }
+
 func countNeighbors(board *[][]int, x, y int) int {
 	rows := len((*board))
 	cols := len((*board)[0])
