@@ -27,8 +27,8 @@ func main() {
 	// Start measuring time
 	startTime := time.Now()
 
-	dim := 50
-	board_size := 10
+	dim := 200
+	board_size := 20
 	epochs := 10
 	seed := 42
 
