@@ -11,20 +11,9 @@ import (
 )
 
 func handleConnection(conn *net.UDPConn) {
-	defer conn.Close()
 
 	buffer := make([]byte, 1024)
 
-	addr, err := net.ResolveUDPAddr("udp", "localhost:1313")
-	if err != nil {
-		fmt.Println("Error resolving address", err)
-		return
-	}
-	conn, err = net.ListenUDP("udp", addr)
-	if err != nil {
-		fmt.Println("Error creating listener", err)
-		return
-	}
 	for {
 		n, addr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
@@ -76,7 +65,7 @@ func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
 
 func main() {
 
-	addr, err := net.ResolveUDPAddr("udp", ":1313")
+	addr, err := net.ResolveUDPAddr("udp", ":5151")
 	if err != nil {
 		fmt.Println("Error resolving UDP address:", err)
 		return
@@ -88,7 +77,7 @@ func main() {
 		return
 	}
 	defer conn.Close()
-	fmt.Println("Server listening on :1313")
+	fmt.Println("Server listening on :5151")
 
 	for {
 		handleConnection(conn)

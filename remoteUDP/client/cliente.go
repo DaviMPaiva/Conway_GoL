@@ -16,9 +16,8 @@ func main() {
 	seed, _ := strconv.Atoi(os.Args[4])
 	n := 0
 	file, _ := os.OpenFile("../../outputs/"+os.Args[1]+"_"+os.Args[2]+"_"+os.Args[3]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
-	start_time := time.Now()
 
-	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:1313")
+	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:5151")
 	if err != nil {
 		fmt.Println("Error resolving UDP address:", err)
 		os.Exit(1)
@@ -29,7 +28,9 @@ func main() {
 		fmt.Println("Error connecting:", err)
 		os.Exit(1)
 	}
+	fmt.Println("Conexão estabelecida. Iniciando envio de pacotes")
 	for i := 0; i < 10000; i++ {
+		start_time := time.Now()
 
 		message := strconv.Itoa(dim) + "," + strconv.Itoa(board_size) + "," + strconv.Itoa(epochs) + "," + strconv.Itoa(seed)
 
@@ -45,18 +46,16 @@ func main() {
 			fmt.Println("Error reading from UDP connection:", err)
 			return
 		}
+
 		elapsedTime := time.Since(start_time)
 		times = append(times, int(elapsedTime))
 		fmt.Fprintf(file, "%s\n", elapsedTime)
-		fmt.Println("pacote recebido")
+		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	err = conn.Close()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
-	end_time := time.Since(start_time)
-
-	fmt.Printf("Tempo decorrido: %s\n", end_time)
 	print(n)
 }
