@@ -30,17 +30,17 @@ func handleConnection(conn net.Conn) {
 		fmt.Printf("Error converting string")
 		return
 	}
-	board_size, err := strconv.Atoi(results[0])
+	board_size, err := strconv.Atoi(results[1])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
 	}
-	epochs, err := strconv.Atoi(results[0])
+	epochs, err := strconv.Atoi(results[2])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
 	}
-	seed, err := strconv.Atoi(results[0])
+	seed, err := strconv.Atoi(results[3])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
@@ -64,17 +64,23 @@ func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
 
 func main() {
 
-	listener, err := net.Listen("tcp", ":8080")
+	r, err := net.ResolveTCPAddr("tcp", ":8080")
+	if err != nil {
+		fmt.Println("Error resolving:", err)
+		return
+	}
+	//cria um listener tcp
+	ln, err := net.ListenTCP("tcp", r)
 	if err != nil {
 		fmt.Println("Error listening:", err)
 		return
 	}
-	defer listener.Close()
+	defer ln.Close()
 	fmt.Println("Server listening on :8080")
 
 	for {
 
-		conn, err := listener.Accept()
+		conn, err := ln.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection:", err)
 			continue
