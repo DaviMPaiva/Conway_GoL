@@ -8,23 +8,20 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
-func handleConnection(conn *net.UDPConn) {
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 1024)
-	// Read data from the connection
-	n, addr, err := conn.ReadFromUDP(buffer)
+
+	n, err := conn.Read(buffer)
 	if err != nil {
 		fmt.Println("Error reading:", err)
 		return
 	}
 
-	// Echo the received data back to the client
 	data := buffer[:n]
-	fmt.Printf("Received: %s", data)
 
 	results := strings.Split(string(data), ",")
 
@@ -33,17 +30,17 @@ func handleConnection(conn *net.UDPConn) {
 		fmt.Printf("Error converting string")
 		return
 	}
-	board_size, err := strconv.Atoi(results[1])
+	board_size, err := strconv.Atoi(results[0])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
 	}
-	epochs, err := strconv.Atoi(results[2])
+	epochs, err := strconv.Atoi(results[0])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
 	}
-	seed, err := strconv.Atoi(results[3])
+	seed, err := strconv.Atoi(results[0])
 	if err != nil {
 		fmt.Printf("Error converting string")
 		return
@@ -51,7 +48,7 @@ func handleConnection(conn *net.UDPConn) {
 
 	raw_result := conway_game(dim, board_size, epochs, int64(seed))
 	byted_result := convert_to_byte_arr(raw_result, dim)
-	conn.WriteToUDP(byted_result, addr)
+	conn.Write(byted_result)
 }
 
 func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
@@ -66,24 +63,24 @@ func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
 }
 
 func main() {
-	// Start a UDP server on port 8080
-	addr, err := net.ResolveUDPAddr("udp", ":8080")
-	if err != nil {
-		fmt.Println("Error resolving UDP address:", err)
-		return
-	}
 
-	conn, err := net.ListenUDP("udp", addr)
+	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		fmt.Println("Error listening:", err)
 		return
 	}
-	defer conn.Close()
+	defer listener.Close()
 	fmt.Println("Server listening on :8080")
 
 	for {
-		// Accept a connection
-		handleConnection(conn)
+
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err)
+			continue
+		}
+
+		go handleConnection(conn)
 	}
 }
 
@@ -131,10 +128,7 @@ func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
 	var muMatrix sync.Mutex
 	var resultMutexRW sync.RWMutex
 
-	elapsedEpoch := make([]int64, epochs)
 	for i := 0; i < epochs; i++ {
-
-		epochstartTime := time.Now()
 
 		for i := 0; i < rows; i += board_size {
 			for j := 0; j < cols; j += board_size {
@@ -149,8 +143,6 @@ func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
 		wg.Wait()
 
 		matrix = resultMatrix
-
-		elapsedEpoch[i] = time.Since(epochstartTime).Microseconds()
 	}
 	return matrix
 }
@@ -192,12 +184,6 @@ func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
 		}
 	}
 	muMatrix.Unlock()
-}
-
-func displayMatrix(matrix [][]int) {
-	for _, row := range matrix {
-		fmt.Println(row)
-	}
 }
 
 func countNeighbors(board *[][]int, x, y int) int {

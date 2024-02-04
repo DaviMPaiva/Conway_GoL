@@ -8,50 +8,59 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn *net.UDPConn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 1024)
-	// Read data from the connection
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Println("Error reading:", err)
-		return
-	}
 
-	// Echo the received data back to the client
-	data := buffer[:n]
-	fmt.Printf("Received: %s", data)
+	addr, err := net.ResolveUDPAddr("udp", "localhost:1313")
+	if err != nil {
+		fmt.Println("Error resolving address", err)
+		return
+	}
+	conn, err = net.ListenUDP("udp", addr)
+	if err != nil {
+		fmt.Println("Error creating listener", err)
+		return
+	}
+	for {
+		n, addr, err := conn.ReadFromUDP(buffer)
+		if err != nil {
+			fmt.Println("Error reading:", err)
+			return
+		}
 
-	results := strings.Split(string(data), ",")
+		data := buffer[:n]
 
-	dim, err := strconv.Atoi(results[0])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	board_size, err := strconv.Atoi(results[0])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	epochs, err := strconv.Atoi(results[0])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	seed, err := strconv.Atoi(results[0])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
+		results := strings.Split(string(data), ",")
 
-	raw_result := conway_game(dim, board_size, epochs, int64(seed))
-	byted_result := convert_to_byte_arr(raw_result, dim)
-	conn.Write(byted_result)
+		dim, err := strconv.Atoi(results[0])
+		if err != nil {
+			fmt.Printf("Error converting string")
+			return
+		}
+		board_size, err := strconv.Atoi(results[1])
+		if err != nil {
+			fmt.Printf("Error converting string")
+			return
+		}
+		epochs, err := strconv.Atoi(results[2])
+		if err != nil {
+			fmt.Printf("Error converting string")
+			return
+		}
+		seed, err := strconv.Atoi(results[3])
+		if err != nil {
+			fmt.Printf("Error converting string")
+			return
+		}
+
+		raw_result := conway_game(dim, board_size, epochs, int64(seed))
+		byted_result := convert_to_byte_arr(raw_result, dim)
+		conn.WriteToUDP(byted_result, addr)
+	}
 }
 
 func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
@@ -66,25 +75,23 @@ func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
 }
 
 func main() {
-	// Start a TCP server on port 8080
-	listener, err := net.Listen("tcp", ":8080")
+
+	addr, err := net.ResolveUDPAddr("udp", ":1313")
+	if err != nil {
+		fmt.Println("Error resolving UDP address:", err)
+		return
+	}
+
+	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		fmt.Println("Error listening:", err)
 		return
 	}
-	defer listener.Close()
-	fmt.Println("Server listening on :8080")
+	defer conn.Close()
+	fmt.Println("Server listening on :1313")
 
 	for {
-		// Accept a connection
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection:", err)
-			continue
-		}
-
-		// Handle the connection in a separate goroutine
-		go handleConnection(conn)
+		handleConnection(conn)
 	}
 }
 
@@ -132,10 +139,7 @@ func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
 	var muMatrix sync.Mutex
 	var resultMutexRW sync.RWMutex
 
-	elapsedEpoch := make([]int64, epochs)
 	for i := 0; i < epochs; i++ {
-
-		epochstartTime := time.Now()
 
 		for i := 0; i < rows; i += board_size {
 			for j := 0; j < cols; j += board_size {
@@ -151,7 +155,6 @@ func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
 
 		matrix = resultMatrix
 
-		elapsedEpoch[i] = time.Since(epochstartTime).Microseconds()
 	}
 	return matrix
 }
@@ -193,12 +196,6 @@ func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
 		}
 	}
 	muMatrix.Unlock()
-}
-
-func displayMatrix(matrix [][]int) {
-	for _, row := range matrix {
-		fmt.Println(row)
-	}
 }
 
 func countNeighbors(board *[][]int, x, y int) int {
