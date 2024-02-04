@@ -19,11 +19,12 @@ func main() {
 
 	r, _ := net.ResolveTCPAddr("tcp", "localhost:8080")
 
-	for i := 0; i < 100; i++ {
-		conn, err := net.DialTCP("tcp", nil, r)
+	for i := 0; i < 10000; i++ {
 
 		//Começa a marcar o tempo
 		startTime := time.Now()
+
+		conn, err := net.DialTCP("tcp", nil, r)
 
 		// Send a message to the server
 		message := strconv.Itoa(dim) + "," + strconv.Itoa(board_size) + "," + strconv.Itoa(epochs) + "," + strconv.Itoa(seed)
@@ -44,7 +45,7 @@ func main() {
 		}
 
 		//Calcul o tempo decorrido
-		elapsedTime := time.Since(startTime)
+		elapsedTime := time.Since(startTime).Microseconds()
 
 		// Imprimi a matriz
 
@@ -56,7 +57,7 @@ func main() {
 		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
 
 		times = append(times, int(elapsedTime))
-		fmt.Fprintf(file, "%s\n", elapsedTime)
+		fmt.Fprintf(file, "%d\n", elapsedTime)
 		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	print(n)

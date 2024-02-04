@@ -77,17 +77,13 @@ func main() {
 	defer ln.Close()
 	fmt.Println("Server listening on :8080")
 
-	count := 0
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection:", err)
 			continue
 		}
-		count++
 
-		fmt.Println(count)
 		go handleConnection(conn)
 	}
 }
