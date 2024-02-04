@@ -17,13 +17,10 @@ func main() {
 	n := 0
 	file, _ := os.OpenFile("../../outputs/"+os.Args[1]+"_"+os.Args[2]+"_"+os.Args[3]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
 
-	r, err := net.ResolveTCPAddr("tcp", "localhost:8080")
+	r, _ := net.ResolveTCPAddr("tcp", "localhost:8080")
 
-	conn, err := net.DialTCP("tcp", nil, r)
-
-	defer conn.Close()
-
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100; i++ {
+		conn, err := net.DialTCP("tcp", nil, r)
 
 		//Começa a marcar o tempo
 		startTime := time.Now()
@@ -40,6 +37,12 @@ func main() {
 			return
 		}
 
+		err = conn.Close()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(0)
+		}
+
 		//Calcul o tempo decorrido
 		elapsedTime := time.Since(startTime)
 
@@ -54,6 +57,7 @@ func main() {
 
 		times = append(times, int(elapsedTime))
 		fmt.Fprintf(file, "%s\n", elapsedTime)
+		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	print(n)
 }
