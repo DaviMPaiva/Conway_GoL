@@ -50,6 +50,7 @@ func main() {
 		elapsedTime := time.Since(start_time).Microseconds()
 		times = append(times, int(elapsedTime))
 		fmt.Fprintf(file, "%d\n", elapsedTime)
+		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	err = conn.Close()
 	if err != nil {

@@ -14,42 +14,40 @@ func handleConnection(conn *net.UDPConn) {
 
 	buffer := make([]byte, 1024)
 
-	for {
-		n, addr, err := conn.ReadFromUDP(buffer)
-		if err != nil {
-			fmt.Println("Error reading:", err)
-			return
-		}
-
-		data := buffer[:n]
-
-		results := strings.Split(string(data), ",")
-
-		dim, err := strconv.Atoi(results[0])
-		if err != nil {
-			fmt.Printf("Error converting string")
-			return
-		}
-		board_size, err := strconv.Atoi(results[1])
-		if err != nil {
-			fmt.Printf("Error converting string")
-			return
-		}
-		epochs, err := strconv.Atoi(results[2])
-		if err != nil {
-			fmt.Printf("Error converting string")
-			return
-		}
-		seed, err := strconv.Atoi(results[3])
-		if err != nil {
-			fmt.Printf("Error converting string")
-			return
-		}
-
-		raw_result := conway_game(dim, board_size, epochs, int64(seed))
-		byted_result := convert_to_byte_arr(raw_result, dim)
-		conn.WriteToUDP(byted_result, addr)
+	n, addr, err := conn.ReadFromUDP(buffer)
+	if err != nil {
+		fmt.Println("Error reading:", err)
+		return
 	}
+
+	data := buffer[:n]
+
+	results := strings.Split(string(data), ",")
+
+	dim, err := strconv.Atoi(results[0])
+	if err != nil {
+		fmt.Printf("Error converting string")
+		return
+	}
+	board_size, err := strconv.Atoi(results[1])
+	if err != nil {
+		fmt.Printf("Error converting string")
+		return
+	}
+	epochs, err := strconv.Atoi(results[2])
+	if err != nil {
+		fmt.Printf("Error converting string")
+		return
+	}
+	seed, err := strconv.Atoi(results[3])
+	if err != nil {
+		fmt.Printf("Error converting string")
+		return
+	}
+
+	raw_result := conway_game(dim, board_size, epochs, int64(seed))
+	byted_result := convert_to_byte_arr(raw_result, dim)
+	conn.WriteToUDP(byted_result, addr)
 }
 
 func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
