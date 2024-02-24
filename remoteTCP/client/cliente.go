@@ -1,12 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"time"
 )
+
+type Data struct {
+	Size   int     `json:"size"`
+	Matrix [][]int `json:"matrix"`
+}
 
 func main() {
 	var times []int
@@ -15,44 +22,74 @@ func main() {
 	epochs, _ := strconv.Atoi(os.Args[3])
 	seed, _ := strconv.Atoi(os.Args[4])
 	n := 0
-	file, _ := os.OpenFile("../../outputs/"+os.Args[1]+"_"+os.Args[2]+"_"+os.Args[3]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
+	file, _ := os.OpenFile("../../outputs/"+string(dim)+"_"+string(board_size)+"_"+string(epochs)+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
 
 	r, _ := net.ResolveTCPAddr("tcp", "localhost:8080")
 
-	for i := 0; i < 10000; i++ {
+	matrix := make([][]int, dim)
+	for i := range matrix {
+		matrix[i] = make([]int, dim)
+	}
+
+	rand.Seed(int64(seed))
+	for i := range matrix {
+		for j := range matrix[i] {
+			randomNumber := rand.Intn(2)
+			matrix[i][j] = randomNumber
+		}
+
+	}
+	data := Data{
+		Size:   dim,
+		Matrix: matrix,
+	}
+
+	for i := 0; i < 3; i++ {
 
 		//Começa a marcar o tempo
 		startTime := time.Now()
 
+		//se conecta com o servidor
 		conn, err := net.DialTCP("tcp", nil, r)
 
-		// Send a message to the server
-		message := strconv.Itoa(dim) + "," + strconv.Itoa(board_size) + "," + strconv.Itoa(epochs) + "," + strconv.Itoa(seed)
-		conn.Write([]byte(message))
+		//prepara os dados
+		bytes_men, _ := json.Marshal(data)
 
-		// Receive the echoed message from the server
-		buffer := make([]byte, dim*dim)
+		// manda mensagem para o servidor
+		conn.Write([]byte(bytes_men))
+
+		// recebe a mensagem do servidor
+		buffer := make([]byte, 1024)
 		n, err = conn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading:", err)
 			return
 		}
 
+		//fecha a conexao
 		err = conn.Close()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		//Calcul o tempo decorrido
+		//Calcula o tempo decorrido
 		elapsedTime := time.Since(startTime).Microseconds()
 
-		// Imprimi a matriz
+		var receivedData Data
 
-		//result := buffer[:n]
-		//for i := 0; i < dim; i++ {
-		//	fmt.Printf("%s\n", result[i*dim:(i+1)*dim])
-		//}
+		err = json.Unmarshal(buffer[:n], &receivedData)
+
+		if err != nil {
+
+			fmt.Println("Error unmarshaling JSON:", err)
+
+		} else {
+
+			//fmt.Println("Unmarshaled data:", receivedData)
+			data = receivedData
+
+		}
 		// Print the echoed message
 		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
 
