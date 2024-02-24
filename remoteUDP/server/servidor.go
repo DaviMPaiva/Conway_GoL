@@ -2,13 +2,19 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
 )
+
+type Data struct {
+	Size   int     `json:"size"`
+	Matrix [][]int `json:"matrix"`
+}
+
+var board_size = 10
 
 func handleConnection(conn *net.UDPConn) {
 
@@ -20,34 +26,26 @@ func handleConnection(conn *net.UDPConn) {
 		return
 	}
 
-	data := buffer[:n]
+	var receivedData Data
 
-	results := strings.Split(string(data), ",")
+	err = json.Unmarshal(buffer[:n], &receivedData)
 
-	dim, err := strconv.Atoi(results[0])
 	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	board_size, err := strconv.Atoi(results[1])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	epochs, err := strconv.Atoi(results[2])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
-	seed, err := strconv.Atoi(results[3])
-	if err != nil {
-		fmt.Printf("Error converting string")
-		return
-	}
 
-	raw_result := conway_game(dim, board_size, epochs, int64(seed))
-	byted_result := convert_to_byte_arr(raw_result, dim)
-	conn.WriteToUDP(byted_result, addr)
+		fmt.Println("Error unmarshaling JSON:", err)
+
+	} else {
+
+		//fmt.Println("Unmarshaled data:", receivedData)
+
+		raw_result := conway_game(receivedData.Size, board_size, &receivedData.Matrix)
+		data := Data{
+			Size:   receivedData.Size,
+			Matrix: raw_result,
+		}
+		byted_result, _ := json.Marshal(data)
+		conn.WriteToUDP(byted_result, addr)
+	}
 }
 
 func convert_to_byte_arr(raw_matrix [][]int, dim int) []byte {
@@ -89,23 +87,10 @@ const (
 
 type Matrix [][]int
 
-func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
+func conway_game(dim int, board_size int, matrix *[][]int) [][]int {
 
 	rows := dim
 	cols := dim
-
-	matrix := make([][]int, rows)
-	for i := range matrix {
-		matrix[i] = make([]int, cols)
-	}
-
-	rand.Seed(seed)
-	for i := range matrix {
-		for j := range matrix[i] {
-			randomNumber := rand.Intn(2)
-			matrix[i][j] = randomNumber
-		}
-	}
 
 	resultMatrix := make([][]int, rows)
 	for i := range resultMatrix {
@@ -126,25 +111,21 @@ func conway_game(dim int, board_size int, epochs int, seed int64) [][]int {
 	var muMatrix sync.Mutex
 	var resultMutexRW sync.RWMutex
 
-	for i := 0; i < epochs; i++ {
-
-		for i := 0; i < rows; i += board_size {
-			for j := 0; j < cols; j += board_size {
-				wg.Add(1)
-				go func(row, col int) {
-					defer wg.Done()
-					changeValue(&matrix, &muMatrix, &resultMatrix, &resultMutexRW, matrixPool,
-						row, col, board_size)
-				}(i, j)
-			}
+	for i := 0; i < rows; i += board_size {
+		for j := 0; j < cols; j += board_size {
+			wg.Add(1)
+			go func(row, col int) {
+				defer wg.Done()
+				changeValue(matrix, &muMatrix, &resultMatrix, &resultMutexRW, matrixPool,
+					row, col, board_size)
+			}(i, j)
 		}
-		wg.Wait()
-
-		matrix = resultMatrix
-
 	}
-	return matrix
+	wg.Wait()
+
+	return resultMatrix
 }
+
 func changeValue(matrix *[][]int, muMatrix *sync.Mutex,
 	resultMatrix *[][]int, muResult *sync.RWMutex, matrixPool *sync.Pool,
 	row, col int, board_size int) {
