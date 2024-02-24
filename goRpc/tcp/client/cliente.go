@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"math/rand"
 	"net/rpc"
+	"os"
+	"strconv"
 	"time"
 )
 
-const dim = 40
-
 func main() {
+	//args
+	dim, _ := strconv.Atoi(os.Args[1])
+	epochs, _ := strconv.Atoi(os.Args[2])
+	print_result, _ := strconv.Atoi(os.Args[3])
+	file, _ := os.OpenFile("../../../outputs/GoRPC_"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
+	//prepare matrix
 	matrix := make([][]int, dim)
 	for i := range matrix {
 		matrix[i] = make([]int, dim)
 	}
-
+	//rand init
 	rand.Seed(int64(42))
 	for i := range matrix {
 		for j := range matrix[i] {
@@ -23,11 +29,8 @@ func main() {
 			matrix[i][j] = randomNumber
 		}
 	}
-	Cliente(matrix, dim)
-}
 
-func Cliente(matrix [][]int, dim int) {
-	// 1: Conectar ao servidor RPC - host/porta
+	// Conectar ao servidor RPC - host/porta
 	matrix_aux := matrix
 	client, err := rpc.Dial("tcp", "localhost:1313")
 	if err != nil {
@@ -35,33 +38,31 @@ func Cliente(matrix [][]int, dim int) {
 		return
 	}
 	defer client.Close()
-	for k := 0; k < 30; k++ {
+
+	for k := 0; k < int(epochs); k++ {
+		//começa a contar o tempo
+		start_time := time.Now()
+		//request
 		req := impl.Request{Matrix: matrix_aux, Dim: dim}
-		//a funçao reply diz o que vai ser retornado da função add da calculadora
 		rep := impl.Reply{}
 		err = client.Call("ConwayGame.Initialize", req, &rep)
 		if err != nil {
 			fmt.Println("Erro na chamada remota:", err)
 			return
 		}
-
-		// 3: Imprimir o resultado
+		// tempo decorrido
+		elapsedTime := time.Since(start_time).Microseconds()
+		//salva o tempo no arquivo
+		fmt.Fprintf(file, "%d\n", elapsedTime)
+		// atualiza a nova matrix
 		matrix_aux = rep.Matrix_result
-
-		time.Sleep(time.Second * 2)
-		fmt.Println("\033[H\033[2J")
-		displayBoard(matrix_aux)
-
-		//fmt.Printf("Request n° %d\n\n", k+1)
-		//for i := 0; i < len(matrix_aux); i++ {
-		//	for j := 0; j < len(matrix_aux[0]); j++ {
-		//		fmt.Printf("%d ", matrix_aux[i][j])
-		//	}
-		//	fmt.Printf("\n")
-		//}
+		// espera um tempo para printar, limpa o terminal e chama a funcao para printar
+		if int(print_result) > 0 {
+			time.Sleep(time.Second * 2)
+			fmt.Println("\033[H\033[2J")
+			displayBoard(matrix_aux)
+		}
 	}
-
-	// 2: Invocar a operação remota
 
 }
 
@@ -71,18 +72,14 @@ const (
 )
 
 func displayBoard(board [][]int) {
-	// Loop through rows
 	for _, row := range board {
-		// Loop through columns
 		for _, val := range row {
-			// Print black or black spot based on value
 			if val == 0 {
 				fmt.Print("  ")
 			} else {
 				fmt.Print("██")
 			}
 		}
-		// Newline after each row
 		fmt.Println()
 	}
 }

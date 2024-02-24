@@ -15,30 +15,31 @@ type Data struct {
 var board_size = 10
 
 func handleConnection(conn net.Conn) {
+	for {
+		buffer := make([]byte, 1024)
 
-	buffer := make([]byte, 1024)
+		n, _ := conn.Read(buffer)
 
-	n, _ := conn.Read(buffer)
+		var receivedData Data
 
-	var receivedData Data
+		err := json.Unmarshal(buffer[:n], &receivedData)
 
-	err := json.Unmarshal(buffer[:n], &receivedData)
+		if err != nil {
 
-	if err != nil {
+			fmt.Println("Error unmarshaling JSON:", err)
 
-		fmt.Println("Error unmarshaling JSON:", err)
+		} else {
 
-	} else {
+			//fmt.Println("Unmarshaled data:", receivedData)
 
-		//fmt.Println("Unmarshaled data:", receivedData)
-
-		raw_result := conway_game(receivedData.Size, board_size, &receivedData.Matrix)
-		data := Data{
-			Size:   receivedData.Size,
-			Matrix: raw_result,
+			raw_result := conway_game(receivedData.Size, board_size, &receivedData.Matrix)
+			data := Data{
+				Size:   receivedData.Size,
+				Matrix: raw_result,
+			}
+			byted_result, _ := json.Marshal(data)
+			conn.Write(byted_result)
 		}
-		byted_result, _ := json.Marshal(data)
-		conn.Write(byted_result)
 	}
 }
 

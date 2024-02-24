@@ -16,13 +16,10 @@ type Data struct {
 }
 
 func main() {
-	var times []int
 	dim, _ := strconv.Atoi(os.Args[1])
-	board_size, _ := strconv.Atoi(os.Args[2])
-	epochs, _ := strconv.Atoi(os.Args[3])
-	seed, _ := strconv.Atoi(os.Args[4])
+	epochs, _ := strconv.Atoi(os.Args[2])
 	n := 0
-	file, _ := os.OpenFile("../../outputs/"+string(dim)+"_"+string(board_size)+"_"+string(epochs)+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
+	file, _ := os.OpenFile("../../outputs/TCP_"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
 
 	r, _ := net.ResolveTCPAddr("tcp", "localhost:8080")
 
@@ -31,7 +28,7 @@ func main() {
 		matrix[i] = make([]int, dim)
 	}
 
-	rand.Seed(int64(seed))
+	rand.Seed(int64(42))
 	for i := range matrix {
 		for j := range matrix[i] {
 			randomNumber := rand.Intn(2)
@@ -44,13 +41,13 @@ func main() {
 		Matrix: matrix,
 	}
 
-	for i := 0; i < 3; i++ {
+	//se conecta com o servidor
+	conn, err := net.DialTCP("tcp", nil, r)
+
+	for i := 0; i < int(epochs); i++ {
 
 		//Começa a marcar o tempo
 		startTime := time.Now()
-
-		//se conecta com o servidor
-		conn, err := net.DialTCP("tcp", nil, r)
 
 		//prepara os dados
 		bytes_men, _ := json.Marshal(data)
@@ -66,36 +63,28 @@ func main() {
 			return
 		}
 
-		//fecha a conexao
-		err = conn.Close()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(0)
-		}
-
 		//Calcula o tempo decorrido
 		elapsedTime := time.Since(startTime).Microseconds()
+		fmt.Fprintf(file, "%d\n", elapsedTime)
 
+		//desserializa
 		var receivedData Data
-
 		err = json.Unmarshal(buffer[:n], &receivedData)
-
 		if err != nil {
-
 			fmt.Println("Error unmarshaling JSON:", err)
-
 		} else {
-
 			//fmt.Println("Unmarshaled data:", receivedData)
 			data = receivedData
-
 		}
-		// Print the echoed message
-		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
 
-		times = append(times, int(elapsedTime))
-		fmt.Fprintf(file, "%d\n", elapsedTime)
-		fmt.Printf("pacote recebido numero %d\n", i)
+		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
+		//fmt.Printf("pacote recebido numero %d\n", i)
+	}
+	//fecha a conexao
+	err = conn.Close()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
 	}
 	print(n)
 }
