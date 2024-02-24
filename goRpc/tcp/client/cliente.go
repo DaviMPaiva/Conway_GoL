@@ -57,6 +57,7 @@ func main() {
 		// atualiza a nova matrix
 		matrix_aux = rep.Matrix_result
 		// espera um tempo para printar, limpa o terminal e chama a funcao para printar
+		fmt.Printf("pacote recebido numero %d\n", k)
 		if int(print_result) > 0 {
 			time.Sleep(time.Second * 2)
 			fmt.Println("\033[H\033[2J")

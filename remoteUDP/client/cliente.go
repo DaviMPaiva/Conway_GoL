@@ -67,7 +67,7 @@ func main() {
 		}
 
 		//recebe a mensagem
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 65535)
 		n, _, err = conn.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println("Error reading from UDP connection:", err)
@@ -89,7 +89,7 @@ func main() {
 		}
 
 		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
-		//fmt.Printf("pacote recebido numero %d\n", i)
+		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	err = conn.Close()
 	if err != nil {

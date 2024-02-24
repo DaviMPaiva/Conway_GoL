@@ -18,7 +18,7 @@ var board_size = 10
 
 func handleConnection(conn *net.UDPConn) {
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 65535)
 
 	n, addr, err := conn.ReadFromUDP(buffer)
 	if err != nil {

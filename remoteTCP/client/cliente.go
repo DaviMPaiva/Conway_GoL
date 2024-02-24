@@ -56,7 +56,7 @@ func main() {
 		conn.Write([]byte(bytes_men))
 
 		// recebe a mensagem do servidor
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 65535)
 		n, err = conn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading:", err)
@@ -78,7 +78,7 @@ func main() {
 		}
 
 		//fmt.Printf("Tempo decorrido: %s\n", elapsedTime)
-		//fmt.Printf("pacote recebido numero %d\n", i)
+		fmt.Printf("pacote recebido numero %d\n", i)
 	}
 	//fecha a conexao
 	err = conn.Close()

@@ -16,7 +16,7 @@ var board_size = 10
 
 func handleConnection(conn net.Conn) {
 	for {
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 65535)
 
 		n, _ := conn.Read(buffer)
 
