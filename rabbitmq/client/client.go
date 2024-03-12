@@ -19,7 +19,7 @@ func main() {
 	epochs, _ := strconv.Atoi(os.Args[2])
 	print_result, _ := strconv.Atoi(os.Args[3])
 	display, _ := strconv.Atoi(os.Args[4])
-	file, _ := os.OpenFile("../../../outputs/GoRPC_"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
+	file, _ := os.OpenFile("../../outputs/rabbitmq/rabbitmq"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
 
 	matrix := make([][]int, dim)
 	//prepare matrix
@@ -83,6 +83,7 @@ func main() {
 
 	for i := 0; i < int(epochs); i++ {
 		// prepara mensagem
+		start_time := time.Now()
 		msgRequest := impl.Request{Matrix: matrix_aux, Dim: dim}
 		msgRequestBytes, err := json.Marshal(msgRequest)
 		if err != nil {
@@ -91,7 +92,6 @@ func main() {
 		}
 
 		correlationID := RandomString(32)
-		start_time := time.Now()
 		err = ch.Publish(
 			"",
 			"request_queue",
