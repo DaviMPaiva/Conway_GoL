@@ -19,7 +19,7 @@ func main() {
 	epochs, _ := strconv.Atoi(os.Args[2])
 	print_result, _ := strconv.Atoi(os.Args[3])
 	display, _ := strconv.Atoi(os.Args[4])
-	file, _ := os.OpenFile("../../../outputs/GoRPC_"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
+	file, _ := os.OpenFile("../../outputs/rabbitmq_"+os.Args[1]+"_"+os.Args[2]+".txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0222)
 
 	matrix := make([][]int, dim)
 	//prepare matrix
@@ -120,7 +120,7 @@ func main() {
 		matrix_aux = msgResponse.Matrix_result
 		// espera um tempo para printar, limpa o terminal e chama a funcao para printar
 		if int(print_result) > 0 {
-			time.Sleep(time.Second/5)
+			time.Sleep(time.Second / 5)
 			fmt.Println("\033[H\033[2J")
 			displayBoard(matrix_aux)
 			fmt.Printf("\n\npacote recebido numero %d\n\n", i)
@@ -151,7 +151,7 @@ func displayBoard(board [][]int) {
 func plainTextReader(dim int) [][]int {
 	// Input plaintext
 	// Read file
-	data, err := os.ReadFile("../../../Gosper-glider_gun.txt")
+	data, err := os.ReadFile("../../p50_glider_gun.txt")
 	if err != nil {
 		fmt.Println(err)
 	}
