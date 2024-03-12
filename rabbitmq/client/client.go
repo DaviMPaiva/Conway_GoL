@@ -83,6 +83,7 @@ func main() {
 
 	for i := 0; i < int(epochs); i++ {
 		// prepara mensagem
+		start_time := time.Now()
 		msgRequest := impl.Request{Matrix: matrix_aux, Dim: dim}
 		msgRequestBytes, err := json.Marshal(msgRequest)
 		if err != nil {
@@ -91,7 +92,6 @@ func main() {
 		}
 
 		correlationID := RandomString(32)
-		start_time := time.Now()
 		err = ch.Publish(
 			"",
 			"request_queue",
